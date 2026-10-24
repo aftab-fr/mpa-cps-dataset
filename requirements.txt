@@ -1,0 +1,6 @@
+# MPA-CPS dataset code: generation and validation only (Python 3.11).
+# Pinned to the versions used to produce the published files; the v1.1 CSV files
+# are byte-identical when regenerated with these versions.
+numpy==2.4.6
+pandas==3.1.0
+scipy==1.17.1

@@ -1,0 +1,15 @@
+# generated data and benchmark outputs (published on Zenodo, not in git)
+build/
+data/
+regen/
+MPA-CPS_v1.0/
+*.csv.gz
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS
+.DS_Store

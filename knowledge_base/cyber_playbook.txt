@@ -1,0 +1,39 @@
+=============================================================================
+DOCUMENT: OT/ICS CYBERSECURITY MITIGATION PLAYBOOK
+SUBJECT: INCIDENT RESPONSE FOR INDUSTRY 4.0 NETWORKS
+FRAMEWORK: MAX-PLUS LATENCY TRIGGERS
+=============================================================================
+
+1. THE CYBER-PHYSICAL ANOMALY FRAMEWORK
+This playbook is triggered automatically when the Max-Plus Algebraic (MPA) observer detects a persistent "latency_delta" (Actual Time > Expected Time) that cannot be explained by Calendar Constraints (i.e., is_working = TRUE). Because modern Operational Technology (OT) malware is often stealthy and evades traditional IT firewalls, we use the physical time delay of the machines as the ultimate intrusion signature. 
+
+
+
+2. ATTACK PROFILE: DDoS (Distributed Denial of Service) / UDP FLOOD
+- SYMPTOMS: Positive latency delta (+ seconds) on Max-Plus predictions. Network monitoring will show high packet collision rates or bandwidth saturation at the edge router.
+- PHYSICAL IMPACT: PLCs (Programmable Logic Controllers) fail to receive scheduling tokens on time, causing the physical machine (e.g., P5_Painting) to wait, delaying the schedule.
+- MITIGATION DIRECTIVE: 
+  a) Physically or logically isolate the OT edge router connected to the affected machine zone.
+  b) Switch the local PLC to standalone/offline fallback mode.
+  c) Check the Factory SOP for available resource rerouting. 
+  d) REROUTING LOGIC: If the backup resource is unavailable (Resource Status = 1), you must halt the upstream process to prevent physical damage. Do not route data through the compromised subnet.
+
+3. ATTACK PROFILE: MITM (Man-in-the-Middle) / DATA INJECTION
+- SYMPTOMS: Sudden, isolated command latency on a single robotic node (e.g., res_R1_RobotArm). The network traffic volume may appear entirely normal to IT firewalls, but the MPA delta will show severe deviations as the machine executes malicious, injected sub-routines.
+- PHYSICAL IMPACT: Potential destruction of the product or damage to the robot arm due to altered physical coordinates.
+- MITIGATION DIRECTIVE:
+  a) Instantly disconnect the compromised PLC from the main IT/OT bridge. Do not trust sensor data from this node.
+  b) Flush the machine's active job buffer to prevent corrupted manufacturing.
+  c) Trigger Safety Interlock Level 2 (Physical power disconnect).
+  d) STRICT RULE: Do NOT reroute any jobs to this specific machine until its firmware hash is verified by the security team. Inform the operator that the machine is "Quarantined".
+
+4. ATTACK PROFILE: RANSOMWARE / CASCADE FAILURE
+- SYMPTOMS: Latency deltas spiking simultaneously or sequentially across multiple machines (e.g., P1 through P6 showing positive deltas within a 10-second window). 
+- PHYSICAL IMPACT: Total loss of production scheduling. Potential lockdown of Human-Machine Interfaces (HMIs).
+- MITIGATION DIRECTIVE:
+  a) INITIATE TOTAL FACTORY SHUTDOWN. Do not attempt to reroute jobs, as the entire scheduling matrix is compromised.
+  b) Sever the physical fiber-optic link between the corporate IT network and the OT factory floor network to prevent lateral movement.
+  c) Reboot all local PLC controllers from secure, read-only backup images.
+
+5. OPERATIONAL RECOVERY (POST-INCIDENT)
+Once the cyber-threat is neutralized, the system cannot simply be turned back on. The RAG system must recalculate the initial state vector x(0) using the current physical location of all half-finished products, and re-run the Max-Plus baseline matrix A to generate a new production schedule.

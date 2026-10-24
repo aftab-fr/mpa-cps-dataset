@@ -1,0 +1,40 @@
+=============================================================================
+DOCUMENT: MASTER FACTORY STANDARD OPERATING PROCEDURES (SOP)
+SUBJECT: RESOURCE CAPACITY, CALENDAR CONSTRAINTS, AND ROUTING (PAPER 2)
+VERSION: 4.1 (CIFRE/Max-Plus Integrated Edition)
+LAST UPDATED: Q1 2024
+=============================================================================
+
+1. INTRODUCTION AND MATHEMATICAL BASELINE
+This document outlines the operational constraints for the 6-stage automated production line. The expected cycle times for all processes are deterministically calculated using Max-Plus Algebra (MPA) state-space equations: x(k) = A ⊗ x(k-1). Any deviation from the MPA expected time is defined as "latency_delta". Rerouting and production decisions must strictly adhere to the resource and calendar constraints outlined below.
+
+2. SHIFT AND CALENDAR PROTOCOLS (THE "is_working" FLAG)
+The factory operates on a European 3-shift model. Mathematical latency is entirely expected during scheduled downtimes and must NOT be flagged as a cyber-physical anomaly if the factory is in a scheduled break.
+- Morning Shift (06:00 - 14:00): Factory operates at 100% capacity (skill_factor = 1.0). Fully automated. RAG rerouting is authorized. "is_working" = TRUE.
+- Afternoon Shift (14:00 - 22:00): Factory operates at ~90% capacity (skill_factor = 0.9). Less experienced operators. Cycle times are slightly elevated (×1.1). Automated rerouting by the RAG system is authorized. "is_working" = TRUE.
+- Night Shift (22:00 - 06:00): Skeleton crew at reduced capacity (skill_factor = 0.8). Cycle times are elevated (×1.2). If an anomaly is detected during the Night Shift, automated rerouting is PROHIBITED. The RAG system must instruct the operator to trigger a manual halt. "is_working" = TRUE.
+- Weekends & Holidays: Factory is idle. "is_working" = FALSE. All latency deltas arising during scheduled downtime are classified as Scheduled Events. Suppress all cyber-security alerts.
+- Scheduled Maintenance / Breaks: If "is_working" is FALSE, any mathematical latency delta is to be categorized as a Scheduled Event. Suppress all cyber-security alerts.
+
+3. STAGE-BY-STAGE ROUTING & DEPENDENCY RULES
+The production line consists of 6 sequential stages. Constraints are absolute.
+- P1_Stamping: This is the primary intake stage. It is an upstream bottleneck. If P1_Stamping experiences critical latency, no rerouting is possible. The line will starve. Directive: Isolate P1 and halt feeder lines.
+- P2_Welding & P3_Assembly: These are tightly coupled sequential processes. If P2_Welding is compromised, halt P1 immediately to prevent a physical buffer overflow. Jobs from P2 cannot be bypassed to P3.
+- P4_Testing: Quality assurance node. If P4 fails, products must be quarantined in the secondary holding buffer.
+- P5_Painting: High-resource dependency stage. P5 relies exclusively on res_R6_PaintBooth. 
+  -> STRICT REROUTING RULE: You CANNOT reroute active jobs to P5_Painting if res_R6_PaintBooth == 1 (meaning it is at Maximum Capacity). If a cyber-attack occurs anywhere on the line and R6 is at capacity, you must HALT P4_Testing immediately to prevent a pile-up of unpainted units.
+- P6_Packaging: Final stage. If latency delta spikes here, halt the outbound logistics conveyor and quarantine the final product batch for manual inspection.
+
+4. RESOURCE UTILIZATION AND SKILL LIMITS
+The physical hardware resources shared across the factory floor are strictly monitored. 
+- res_R1_RobotArm: Shared across Stamping and Welding. Heavy physical load.
+- res_R2_Conveyor: Central transport matrix. If Conveyor latency spikes, it indicates a systemic physical disruption. Halt all machines immediately.
+- res_R3_Welder & res_R4_AssemblyBot: High-voltage equipment. Subject to rapid thermal overload if scheduling is delayed by cyber-attacks.
+- res_R5_TestStation: Air-gapped logic controller.
+- res_R6_PaintBooth: Highly volatile chemical environment. Maximum capacity is strictly enforced for safety.
+
+5. EMERGENCY BUFFER OVERFLOW PROTOCOL
+If the AI detects an anomaly and the required backup resource is currently engaged (Status = 1), the AI must invoke the Buffer Overflow Protocol: 
+1. Issue a physical halt command to the machine immediately upstream of the affected node.
+2. Alert the floor manager via the dashboard.
+3. Wait for network clearance before resuming the MPA schedule matrix.

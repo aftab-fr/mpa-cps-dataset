@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use MPA-CPS, please cite the dataset and the related article."
+title: "MPA-CPS: labelled cyber-physical attack data for a shift- and resource-aware manufacturing line"
+type: dataset
+version: 1.1.0
+license: CC-BY-4.0
+doi: 10.5281/zenodo.23624691
+repository-code: "https://github.com/aftab-fr/mpa-cps-dataset"
+authors:
+  - family-names: Uddin
+    given-names: Md Aftab
+    orcid: "https://orcid.org/0009-0005-6347-5569"
+    affiliation: "M-Plus Group; Université Marie et Louis Pasteur, UTBM, CNRS, Institut FEMTO-ST"
+    email: md.uddin@utbm.fr
+  - family-names: Gaber
+    given-names: Jaafar
+    orcid: "https://orcid.org/0000-0003-4356-6760"
+    affiliation: "Université Marie et Louis Pasteur, UTBM, CNRS, Institut FEMTO-ST"
+  - family-names: Petitjean
+    given-names: Pierre
+    affiliation: "M-Plus Group"
+  - family-names: Cortinovis
+    given-names: François
+    affiliation: "M-Plus Group"
+keywords:
+  - cyber-physical systems
+  - smart manufacturing
+  - anomaly detection
+  - max-plus algebra
+  - industrial control system security
+  - benchmark dataset
