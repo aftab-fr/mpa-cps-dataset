@@ -2,9 +2,9 @@ cff-version: 1.2.0
 message: "If you use MPA-CPS, please cite the dataset and the related article."
 title: "MPA-CPS: labelled cyber-physical attack data for a shift- and resource-aware manufacturing line"
 type: dataset
-version: 1.1.0
+version: 1.1.1
 license: CC-BY-4.0
-doi: 10.5281/zenodo.23624691
+doi: 10.5281/zenodo.23624690
 repository-code: "https://github.com/aftab-fr/mpa-cps-dataset"
 authors:
   - family-names: Uddin

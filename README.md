@@ -1,6 +1,6 @@
 # MPA-CPS dataset — code
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23624691.svg)](https://doi.org/10.5281/zenodo.23624691)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23624690.svg)](https://doi.org/10.5281/zenodo.23624690)
 
 Generation and validation code for **MPA-CPS**, a synthetic, fully labelled
 1 Hz time-series dataset of a six-stage discrete manufacturing line
@@ -9,7 +9,7 @@ classes of cyber-physical attack: network-induced delay (DDoS), sensor
 spoofing and ransomware-induced stage freeze. Processing times follow a
 calendar- and resource-aware Max-Plus Algebra (MPA) model with three shifts.
 
-**The data files are on Zenodo:** https://doi.org/10.5281/zenodo.23624691 (CC BY 4.0).
+**The data files are on Zenodo:** https://doi.org/10.5281/zenodo.23624690 (CC BY 4.0).
 This repository holds the code that produces and checks them.
 
 | Release | What it is |
@@ -56,6 +56,26 @@ python scripts/technical_validation.py --v10 MPA-CPS_v1.0   # -> build/validatio
 python scripts/check_v1_0_regeneration.py --v10 MPA-CPS_v1.0
 ```
 
+## Generation parameters
+
+`python scripts/generate_v1_1.py --help` lists every option. The defaults
+reproduce the published v1.1 files; other values create new scenario variants,
+and each run records its parameters in `manifest_v1.1.json`.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--seeds` | `1 2 3` | Random seeds (noise, attack schedule, resources) |
+| `--noise-sd` | `2.0` | Marginal sd of process noise (s) |
+| `--noise-phi` | `0.6` | AR(1) coefficient of process noise |
+| `--shift-factors` | `1.0 0.9 0.8` | f_s for Morning, Afternoon, Night; expected duration = d (2 − f_s) |
+| `--shift-loads` | `0.78 0.72 0.60` | Mean resource utilisation per shift |
+| `--ddos-mag` | `4 10` | DDoS plateau delay range (s) |
+| `--spoof-mag` | `4 8` | Hidden slowdown range during spoofing (s) |
+| `--freeze-mag` | `8 15` | Upstream blocking delay range during ransomware freeze (s) |
+| `--maint-offset` | `5 10` | Offset of maintenance test runs (s) |
+
+Example: `python scripts/generate_v1_1.py --seeds 7 --noise-sd 4 --out build/noisy`
+
 With the pinned versions in `requirements.txt` (Python 3.11), the six v1.1
 files are byte-identical to the Zenodo files (compare with the
 `SHA256SUMS.txt` there), the benchmark tables equal `MPA-CPS_benchmark_results.zip`,
@@ -69,4 +89,4 @@ Code: MIT ([LICENSE](LICENSE)). Data: CC BY 4.0 ([LICENSE-DATA](LICENSE-DATA)).
 
 Please cite the dataset (see [CITATION.cff](CITATION.cff)):
 
-> M. A. Uddin, J. Gaber, P. Petitjean, F. Cortinovis, MPA-CPS: labelled cyber-physical attack data for a shift- and resource-aware manufacturing line (v1.0 and v1.1), Zenodo (2026). https://doi.org/10.5281/zenodo.23624691
+> M. A. Uddin, J. Gaber, P. Petitjean, F. Cortinovis, MPA-CPS: labelled cyber-physical attack data for a shift- and resource-aware manufacturing line (v1.0 and v1.1), Zenodo (2026). https://doi.org/10.5281/zenodo.23624690

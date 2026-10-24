@@ -26,6 +26,9 @@ What v1.1 adds (each one answers a weakness of v1.0):
     delta_i = x_i - d_i * (2 - f_s).
 
 Usage:  python generate_v1_1.py --out ../build/v1.1 [--seeds 1 2 3]
+        python generate_v1_1.py --help        # all generation parameters
+The defaults reproduce the published v1.1 files byte for byte; other values
+(e.g. --noise-sd 4 --shift-factors 1.0 0.95 0.9) give new scenario variants.
 """
 from __future__ import annotations
 
@@ -38,7 +41,7 @@ import numpy as np
 import pandas as pd
 from scipy.signal import lfilter
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 
 STAGES = ["P1_Stamping", "P2_Welding", "P3_Assembly",
           "P4_Testing", "P5_Painting", "P6_Packaging"]
@@ -75,6 +78,9 @@ MAINTENANCE = [(pd.Timestamp("2024-11-09 08:00"), pd.Timestamp("2024-11-09 10:00
 CALIBRATION_END = pd.Timestamp("2024-11-05 06:00:00")  # first production day kept attack-free
 
 NOISE_SD, NOISE_PHI = 2.0, 0.6       # process noise: AR(1), marginal sd 2 s (v1.0: iid sd 2 s)
+# attack magnitude ranges (s) and maintenance test-run offset (s); all can be changed on the command line
+DDOS_MAG, SPOOF_MAG, FREEZE_MAG = (4.0, 10.0), (4.0, 8.0), (8.0, 15.0)
+MAINT_OFFSET = (5.0, 10.0)
 LATENT_SD, LATENT_PHI = 0.05, 0.995  # slow drift of resource utilisation
 
 EVENT_PLAN = ["DDoS_Delay"] * 4 + ["Sensor_Spoofing"] * 4 + ["Ransomware_Freeze"] * 3
@@ -175,16 +181,16 @@ def schedule_events(cal, rng) -> list[dict]:
         if etype == "DDoS_Delay":
             n_aff = int(rng.choice([3, 4, 5, 6], p=[0.2, 0.2, 0.2, 0.4]))
             ev["stages"] = sorted(rng.choice(N_STAGES, n_aff, replace=False).tolist())
-            ev["magnitude_s"] = round(float(rng.uniform(4, 10)), 2)
+            ev["magnitude_s"] = round(float(rng.uniform(*DDOS_MAG)), 2)
             ev["mode"] = "network_delay"
             ev["env_seed"] = int(rng.integers(2**31))
         elif etype == "Sensor_Spoofing":
             ev["stages"] = [int(rng.integers(N_STAGES))]
-            ev["magnitude_s"] = round(float(rng.uniform(4, 8)), 2)  # hidden physical slowdown
+            ev["magnitude_s"] = round(float(rng.uniform(*SPOOF_MAG)), 2)  # hidden physical slowdown
             ev["mode"] = next(spoof_modes)
         else:
             ev["stages"] = [int(rng.integers(N_STAGES))]
-            ev["magnitude_s"] = round(float(rng.uniform(8, 15)), 2)  # upstream blocking delay
+            ev["magnitude_s"] = round(float(rng.uniform(*FREEZE_MAG)), 2)  # upstream blocking delay
             ev["mode"] = "controller_lockout"
         events.append(ev)
     events.sort(key=lambda ev: ev["start_idx"])
@@ -224,7 +230,7 @@ def generate(seed: int, topology: str, cal: pd.DataFrame):
     x_true = baseline + noise
 
     # Planned maintenance: test cycles at Morning speed plus a +5..10 s offset
-    x_true[maint] = BASE + rng_maint.uniform(5, 10, N_STAGES) + 1.5 * noise[maint]
+    x_true[maint] = BASE + rng_maint.uniform(*MAINT_OFFSET, N_STAGES) + 1.5 * noise[maint]
     x_true[~(prod | maint)] = np.nan
     x_true = np.maximum(x_true, 0.0)
 
@@ -329,10 +335,27 @@ def generate(seed: int, topology: str, cal: pd.DataFrame):
 
 
 def main():
+    global NOISE_SD, NOISE_PHI, DDOS_MAG, SPOOF_MAG, FREEZE_MAG, MAINT_OFFSET
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(Path(__file__).resolve().parents[1] / "build" / "v1.1"))
     ap.add_argument("--seeds", type=int, nargs="+", default=[1, 2, 3])
+    # generation parameters; the defaults reproduce the published v1.1 files byte for byte
+    ap.add_argument("--noise-sd", type=float, default=NOISE_SD, help="marginal sd of process noise (s)")
+    ap.add_argument("--noise-phi", type=float, default=NOISE_PHI, help="AR(1) coefficient of process noise")
+    ap.add_argument("--shift-factors", type=float, nargs=3, metavar=("MORNING", "AFTERNOON", "NIGHT"),
+                    default=list(SHIFT_FACTOR.values()), help="f_s; expected duration = d * (2 - f_s)")
+    ap.add_argument("--shift-loads", type=float, nargs=3, metavar=("MORNING", "AFTERNOON", "NIGHT"),
+                    default=list(SHIFT_LOAD.values()), help="mean resource utilisation per shift")
+    ap.add_argument("--ddos-mag", type=float, nargs=2, metavar=("LO", "HI"), default=list(DDOS_MAG))
+    ap.add_argument("--spoof-mag", type=float, nargs=2, metavar=("LO", "HI"), default=list(SPOOF_MAG))
+    ap.add_argument("--freeze-mag", type=float, nargs=2, metavar=("LO", "HI"), default=list(FREEZE_MAG))
+    ap.add_argument("--maint-offset", type=float, nargs=2, metavar=("LO", "HI"), default=list(MAINT_OFFSET))
     args = ap.parse_args()
+    NOISE_SD, NOISE_PHI = args.noise_sd, args.noise_phi
+    SHIFT_FACTOR.update(zip(SHIFT_FACTOR, args.shift_factors))
+    SHIFT_LOAD.update(zip(SHIFT_LOAD, args.shift_loads))
+    DDOS_MAG, SPOOF_MAG = tuple(args.ddos_mag), tuple(args.spoof_mag)
+    FREEZE_MAG, MAINT_OFFSET = tuple(args.freeze_mag), tuple(args.maint_offset)
     out = Path(args.out)
     (out / "data").mkdir(parents=True, exist_ok=True)
     (out / "mpa_matrices").mkdir(exist_ok=True)
@@ -364,6 +387,8 @@ def main():
         "shift_factor": SHIFT_FACTOR, "shift_load": SHIFT_LOAD, "breaks": {k: f"{h:02d}:{m:02d}+{BREAK_MIN}min" for k, (h, m) in BREAKS.items()},
         "holidays": [str(h) for h in HOLIDAYS], "maintenance": [[str(a), str(b)] for a, b in MAINTENANCE],
         "attack_free_until": str(CALIBRATION_END), "noise": {"model": "AR(1)", "phi": NOISE_PHI, "marginal_sd_s": NOISE_SD},
+        "attack_magnitude_s": {"DDoS_Delay": DDOS_MAG, "Sensor_Spoofing": SPOOF_MAG, "Ransomware_Freeze": FREEZE_MAG},
+        "maintenance_offset_s": MAINT_OFFSET,
         "resources": RESOURCES, "event_plan": EVENT_PLAN, "duration_min": DURATION_MIN,
         "topologies": {k: [[STAGES[a], STAGES[b], w] for a, b, w in v] for k, v in TOPOLOGIES.items()}}
     (out / "manifest_v1.1.json").write_text(json.dumps(manifest, indent=2, default=str))
